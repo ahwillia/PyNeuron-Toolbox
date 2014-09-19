@@ -7,4 +7,6 @@ However, much of the data analysis capabilities of NEURON (e.g. [shape plots](ht
 
 Installation
 =============
+Download or clone this repository, then run:
+
 `python setup.py install`
