@@ -10,3 +10,7 @@ Installation
 Download or clone this repository, then run:
 
 `python setup.py install`
+
+Tutorials
+==========
+At the moment, only a few basic functions are included in the toolbox. These mostly relate to plotting the morphology of model cells. [Click here for a tutorial on the morphology toolbox](http://alexhwilliams.info/code/pyneuron_morph.html)
