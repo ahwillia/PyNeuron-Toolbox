@@ -5,6 +5,8 @@ The [NEURON simulation environment](http://www.neuron.yale.edu/neuron/) is one o
 
 However, much of the data analysis capabilities of NEURON (e.g. [shape plots](http://www.oberlin.edu/OCTET/HowTo/NEURON/B2_RealisticMorph.html)) are still limited to the traditional environment in [hoc](http://en.wikipedia.org/wiki/Hoc_(programming_language)). The toolbox provides some functions to do data analysis and visualization in matplotlib. One of the advantages of this approach is that analysis can be easily shared with researchers that use python, even if they are unfamiliar with NEURON or hoc.
 
+**Disclaimer:** This code is only a side project at the moment. Use with caution and let me know if you find any unexpected behaviors. Feature requests are also welcome.
+
 Installation
 =============
 Download or clone this repository, then run:
