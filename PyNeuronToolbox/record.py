@@ -1,6 +1,6 @@
 import numpy as np
 
-def ez_record(h,var='v',sections=None,secnames=None):
+def ez_record(h,var='v',sections=None,targ_names=None,cust_labels=None):
     """
     Plots a 3D shapeplot
 
@@ -11,7 +11,10 @@ def ez_record(h,var='v',sections=None,secnames=None):
                   'v' (membrane potential)
                   'cai' (Ca concentration)
         sections = list of h.Section() objects to be recorded
-        secnames = custom list of section names
+        targ_names = list of section names to be recorded; alternative
+                     passing list of h.Section() objects directly
+                     through the "sections" argument above.
+        cust_labels =  list of custom section labels
 
     Returns:
         data = list of h.Vector() objects recording membrane potential
@@ -19,6 +22,12 @@ def ez_record(h,var='v',sections=None,secnames=None):
     """
     if sections is None:
         sections = list(h.allsec())
+    if targ_names is not None:
+        old_sections = sections
+        sections = []
+        for sec in old_sections:
+            if sec.name() in targ_names:
+                sections.append(sec)
 
     data, labels = [], []
     for i in range(len(sections)):
@@ -31,10 +40,10 @@ def ez_record(h,var='v',sections=None,secnames=None):
             elif var is 'cai':
                 data[-1].record(sec(position)._ref_cai)
             # determine label
-            if secnames is None:
+            if cust_labels is None:
                 lab = sec.name()+'_'+str(round(position,5))
             else: 
-                lab = secnames[i]+'_'+str(round(position,5))
+                lab = cust_labels[i]+'_'+str(round(position,5))
             labels.append(lab)
 
     return (data,labels)
