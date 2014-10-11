@@ -126,7 +126,7 @@ def get_section_path(h,sec):
     xyz = np.array(xyz)
     return xyz
 
-def shapeplot(h,ax,sections=None,lw=1):
+def shapeplot(h,ax,sections=None,**kwargs):
     """
     Plots a 3D shapeplot
 
@@ -151,7 +151,7 @@ def shapeplot(h,ax,sections=None,lw=1):
         seg_paths = interpolate_jagged(xyz,sec.nseg)
         for path in seg_paths:
             line, = plt.plot(path[:,0], path[:,1], path[:,2], \
-                             '-k',lw=lw)
+                             '-k',**kwargs)
             lines.append(line)
 
     return lines
