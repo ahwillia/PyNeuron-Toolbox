@@ -158,18 +158,14 @@ def shapeplot(h,ax,sections=None,lw=1):
 
 def shapeplot_animate(v,lines,nframes,x_min=-80,x_max=50,cmap=cm.YlOrBr_r):
     """ Returns animate function updates color of shapeplot """
-    def get_col(x,x_min,x_max):
-        xscaled = (x-x_min)/(x_max-x_min)
-        return cmap(int(xscaled*255))
-
     def animate(i):
         i_t = int((i/nframes)*v.shape[0])
         for i_seg in range(v.shape[1]):
-            lines[i_seg].set_color(get_col(v[i_t,i_seg],x_min,x_max))
+            lines[i_seg].set_color(cmap(int((v[i_t,i_seg]-x_min)*255/(x_max-x_min))))
 
     return animate
 
-def mark_locations(h,section,locs,markspec='or',markersize=10):
+def mark_locations(h,section,locs,markspec='or',**kwargs):
     """
     Marks one or more locations on along a section. Could be used to
     mark the location of a recording or electrical stimulation.
@@ -204,5 +200,5 @@ def mark_locations(h,section,locs,markspec='or',markersize=10):
 
     # plot markers
     line, = plt.plot(xyz_marks[:,0], xyz_marks[:,1], \
-                     xyz_marks[:,2], markspec, markersize=markersize)
+                     xyz_marks[:,2], markspec, **kwargs)
     return line

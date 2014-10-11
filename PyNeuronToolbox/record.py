@@ -46,7 +46,7 @@ def ez_record(h,var='v',sections=None,targ_names=None,cust_labels=None):
                 lab = cust_labels[i]+'_'+str(round(position,5))
             labels.append(lab)
 
-    return (data,labels)
+    return data, labels
 
 def ez_convert(data):
     """
