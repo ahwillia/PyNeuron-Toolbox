@@ -126,7 +126,8 @@ def get_section_path(h,sec):
     xyz = np.array(xyz)
     return xyz
 
-def shapeplot(h,ax,sections=None,order=None,**kwargs):
+def shapeplot(h,ax,sections=None,order=None,cvals=None,\
+              clim=None,cmap=cm.YlOrBr_r,**kwargs):
     """
     Plots a 3D shapeplot
 
@@ -136,6 +137,10 @@ def shapeplot(h,ax,sections=None,order=None,**kwargs):
         sections = list of h.Section() objects to be plotted
         order = { None= use h.allsec() to get sections
                   'pre'= pre-order traversal of morphology }
+        cvals = list/array with values mapped to color by cmap; useful
+                for displaying voltage, calcium or some other state
+                variable across the shapeplot.
+        cmap = colormap used with cvals
         **kwargs passes on to matplotlib (e.g. color='r' for red lines)
 
     Returns:
@@ -148,24 +153,44 @@ def shapeplot(h,ax,sections=None,order=None,**kwargs):
             sections = get_all_sections(h) # Get sections in "pre-order"
         else:
             sections = list(h.allsec())
+    
+    # Determine color limits
+    if cvals is not None and clim is None:
+        clim = [np.min(cvals), np.max(cvals)]
 
+    # Plot each segement as a line
     lines = []
+    i = 0
     for sec in sections:
         xyz = get_section_path(h,sec)
         seg_paths = interpolate_jagged(xyz,sec.nseg)
         for path in seg_paths:
             line, = plt.plot(path[:,0], path[:,1], path[:,2], \
                              '-k',**kwargs)
+            if cvals is not None:
+                col = cmap(int((cvals[i]-clim[0])*255/(clim[1]-clim[0])))
+                line.set_color(col)
             lines.append(line)
+            i += 1
 
     return lines
 
-def shapeplot_animate(v,lines,nframes,x_min=-80,x_max=50,cmap=cm.YlOrBr_r):
+def shapeplot_animate(v,lines,nframes,tscale='linear',\
+                      x_min=-80,x_max=50,cmap=cm.YlOrBr_r):
     """ Returns animate function which updates color of shapeplot """
-    def animate(i):
-        i_t = int((i/nframes)*v.shape[0])
-        for i_seg in range(v.shape[1]):
-            lines[i_seg].set_color(cmap(int((v[i_t,i_seg]-x_min)*255/(x_max-x_min))))
+    
+    if tscale == 'linear':
+        def animate(i):
+            i_t = int((i/nframes)*v.shape[0])
+            for i_seg in range(v.shape[1]):
+                lines[i_seg].set_color(cmap(int((v[i_t,i_seg]-x_min)*255/(x_max-x_min))))
+    elif tscale == 'log':
+        def animate(i):
+            i_t = int(np.round((v.shape[0] ** (1.0/(nframes-1))) ** i - 1))
+            for i_seg in range(v.shape[1]):
+                lines[i_seg].set_color(cmap(int((v[i_t,i_seg]-x_min)*255/(x_max-x_min))))
+    else:
+        raise ValueError("Unrecognized option '%s' for tscale" % tscale)
 
     return animate
 

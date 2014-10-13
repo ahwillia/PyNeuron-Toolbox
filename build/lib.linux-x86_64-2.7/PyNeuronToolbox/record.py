@@ -34,8 +34,6 @@ def ez_record(h,var='v',sections=None,order=None,\
             if sec.name() in targ_names:
                 sections.append(sec)
 
-    print 'its me!!!'
-
     data, labels = [], []
     for i in range(len(sections)):
         sec = sections[i]
