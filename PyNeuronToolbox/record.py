@@ -1,6 +1,8 @@
 import numpy as np
+from morphology import get_all_sections
 
-def ez_record(h,var='v',sections=None,targ_names=None,cust_labels=None):
+def ez_record(h,var='v',sections=None,order=None,\
+              targ_names=None,cust_labels=None):
     """
     Plots a 3D shapeplot
 
@@ -21,7 +23,10 @@ def ez_record(h,var='v',sections=None,targ_names=None,cust_labels=None):
         labels = list of labels for each voltage trace
     """
     if sections is None:
-        sections = list(h.allsec())
+        if order == 'pre':
+            sections = get_all_sections(h)
+        else:
+            sections = list(h.allsec())
     if targ_names is not None:
         old_sections = sections
         sections = []

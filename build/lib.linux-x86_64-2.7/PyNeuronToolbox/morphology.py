@@ -126,7 +126,7 @@ def get_section_path(h,sec):
     xyz = np.array(xyz)
     return xyz
 
-def shapeplot(h,ax,sections=None,lw=1):
+def shapeplot(h,ax,sections=None,order=None,**kwargs):
     """
     Plots a 3D shapeplot
 
@@ -134,16 +134,20 @@ def shapeplot(h,ax,sections=None,lw=1):
         h = hocObject to interface with neuron
         ax = matplotlib axis for plotting
         sections = list of h.Section() objects to be plotted
-        lw = linewidth
-        res = resolution(how many points to sample along paths)
+        order = { None= use h.allsec() to get sections
+                  'pre'= pre-order traversal of morphology }
+        **kwargs passes on to matplotlib (e.g. color='r' for red lines)
 
     Returns:
         lines = list of line objects making up shapeplot
     """
     
-    # Default is to plot all sections
+    # Default is to plot all sections. 
     if sections is None:
-        sections = list(h.allsec())
+        if order == 'pre':
+            sections = get_all_sections(h) # Get sections in "pre-order"
+        else:
+            sections = list(h.allsec())
 
     lines = []
     for sec in sections:
@@ -151,13 +155,13 @@ def shapeplot(h,ax,sections=None,lw=1):
         seg_paths = interpolate_jagged(xyz,sec.nseg)
         for path in seg_paths:
             line, = plt.plot(path[:,0], path[:,1], path[:,2], \
-                             '-k',lw=lw)
+                             '-k',**kwargs)
             lines.append(line)
 
     return lines
 
 def shapeplot_animate(v,lines,nframes,x_min=-80,x_max=50,cmap=cm.YlOrBr_r):
-    """ Returns animate function updates color of shapeplot """
+    """ Returns animate function which updates color of shapeplot """
     def animate(i):
         i_t = int((i/nframes)*v.shape[0])
         for i_seg in range(v.shape[1]):
@@ -202,3 +206,32 @@ def mark_locations(h,section,locs,markspec='or',**kwargs):
     line, = plt.plot(xyz_marks[:,0], xyz_marks[:,1], \
                      xyz_marks[:,2], markspec, **kwargs)
     return line
+
+def get_all_sections(h):
+    """
+    Alternative to using h.allsec(). This returns all sections in order from
+    the root. Traverses the topology each neuron in "pre-order"
+    """
+    #Iterate over all sections, find roots
+    roots = []
+    for section in h.allsec():
+        sref = h.SectionRef(sec=section)
+        # has_parent returns a float... cast to bool
+        if sref.has_parent() < 0.9:
+            roots.append(section)
+    
+    # Build list of all sections
+    sections = []
+    for r in roots:
+        add_pre(h,sections,r)
+    return sections
+
+def add_pre(h,sec_list,section):
+    """
+    A helper function that traverses a neuron's morphology (or a sub-tree)
+    of the morphology in pre-order.
+    """
+    sec_list.append(section)
+    sref = h.SectionRef(sec=section)
+    for next_node in sref.child:
+        add_pre(h,sec_list,next_node)
