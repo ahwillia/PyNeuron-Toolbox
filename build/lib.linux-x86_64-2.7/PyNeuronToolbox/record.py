@@ -4,7 +4,7 @@ from morphology import get_all_sections
 def ez_record(h,var='v',sections=None,order=None,\
               targ_names=None,cust_labels=None):
     """
-    Plots a 3D shapeplot
+    Records state variables across segments
 
     Args:
         h = hocObject to interface with neuron
@@ -38,6 +38,11 @@ def ez_record(h,var='v',sections=None,order=None,\
     for i in range(len(sections)):
         sec = sections[i]
         for position in np.linspace(0,1,sec.nseg):
+            # ugly fix for single-segment compartments
+            if sec.nseg == 1:
+                print 'yeah'
+                position = 0.5
+            print position
             # record data
             data.append(h.Vector())
             if var is 'v':

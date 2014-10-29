@@ -176,19 +176,19 @@ def shapeplot(h,ax,sections=None,order=None,cvals=None,\
     return lines
 
 def shapeplot_animate(v,lines,nframes,tscale='linear',\
-                      x_min=-80,x_max=50,cmap=cm.YlOrBr_r):
+                      clim=[-80,50],cmap=cm.YlOrBr_r):
     """ Returns animate function which updates color of shapeplot """
     
     if tscale == 'linear':
         def animate(i):
             i_t = int((i/nframes)*v.shape[0])
             for i_seg in range(v.shape[1]):
-                lines[i_seg].set_color(cmap(int((v[i_t,i_seg]-x_min)*255/(x_max-x_min))))
+                lines[i_seg].set_color(cmap(int((v[i_t,i_seg]-clim[0])*255/(clim[1]-clim[0]))))
     elif tscale == 'log':
         def animate(i):
             i_t = int(np.round((v.shape[0] ** (1.0/(nframes-1))) ** i - 1))
             for i_seg in range(v.shape[1]):
-                lines[i_seg].set_color(cmap(int((v[i_t,i_seg]-x_min)*255/(x_max-x_min))))
+                lines[i_seg].set_color(cmap(int((v[i_t,i_seg]-clim[0])*255/(clim[1]-clim[0]))))
     else:
         raise ValueError("Unrecognized option '%s' for tscale" % tscale)
 
@@ -254,9 +254,19 @@ def get_all_sections(h):
 def add_pre(h,sec_list,section):
     """
     A helper function that traverses a neuron's morphology (or a sub-tree)
-    of the morphology in pre-order.
+    of the morphology in pre-order. This is usually not necessary for the
+    user to import.
     """
     sec_list.append(section)
     sref = h.SectionRef(sec=section)
     for next_node in sref.child:
         add_pre(h,sec_list,next_node)
+
+def dist_between(h,seg1,seg2):
+    """
+    Calculates the distance between two segments. I stole this function from
+    a post by Michael Hines on the NEURON forum
+    (www.neuron.yale.edu/phpbb/viewtopic.php?f=2&t=2114)
+    """
+    h.distance(0, seg1.x, sec=seg1.sec)
+    return h.distance(seg2.x, sec=seg2.sec)
