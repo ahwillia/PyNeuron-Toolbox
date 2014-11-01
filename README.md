@@ -16,3 +16,9 @@ Download or clone this repository, then run:
 Tutorials
 ==========
 At the moment, only a few basic functions are included in the toolbox. These mostly relate to visualizing the morphology of model cells. [Click here for a tutorial on the morphology toolbox](http://alexhwilliams.info/code/pyneuron_morph.html) - the animations seem to work best when viewed in Chrome. 
+
+Future Plans
+============
+I would like to add functions to support:
+
+* [Morphoelectric Transforms](http://zadorlab.cshl.edu/PDF/zador-thesis1993.pdf)
