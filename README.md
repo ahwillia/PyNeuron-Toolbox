@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.12576.png)](http://dx.doi.org/10.5281/zenodo.12576)
+
 PyNeuron-Toolbox
 ================
 
@@ -22,3 +24,7 @@ Future Plans
 I would like to add functions to support:
 
 * [Morphoelectric Transforms](http://zadorlab.cshl.edu/PDF/zador-thesis1993.pdf)
+
+Suggested Citation
+==================
+Alex H Williams. (2014). PyNeuron-Toolbox. DOI: 10.5281/zenodo.12576
