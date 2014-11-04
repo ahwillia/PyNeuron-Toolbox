@@ -13,6 +13,8 @@ Download or clone this repository, then run:
 
 `python setup.py install`
 
+I am updating this repository on a semi-regular basis, so check back for updates and [contact me](http://alexhwilliams.info) if you have questions.
+
 Tutorials
 ==========
 At the moment, only a few basic functions are included in the toolbox. These mostly relate to visualizing the morphology of model cells. [Click here for a tutorial on the morphology toolbox](http://alexhwilliams.info/code/pyneuron_morph.html) - the animations seem to work best when viewed in Chrome. 
