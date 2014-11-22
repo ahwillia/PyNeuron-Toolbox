@@ -29,4 +29,4 @@ I would like to add functions to support:
 
 Suggested Citation
 ==================
-Alex H Williams. (2014). PyNeuron-Toolbox. *GitHub Repository*. DOI: 10.5281/zenodo.12576
+Alex H Williams. (2014). PyNeuron-Toolbox. *GitHub Repository*. https://github.com/ahwillia/PyNeuron-Toolbox DOI:10.5281/zenodo.12576
