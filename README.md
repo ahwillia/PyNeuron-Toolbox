@@ -3,6 +3,8 @@
 PyNeuron-Toolbox
 ================
 
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ahwillia/PyNeuron-Toolbox?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 The [NEURON simulation environment](http://www.neuron.yale.edu/neuron/) is one of the most popular options for simulating multi-compartment neuron models. [Hines et al. (2009)](http://journal.frontiersin.org/Journal/10.3389/neuro.11.001.2009/abstract) developed a module that allowed users to execute simulations from python. This option appears to be very popular with users.
 
 However, much of the data analysis capabilities of NEURON (e.g. [shape plots](http://www.oberlin.edu/OCTET/HowTo/NEURON/B2_RealisticMorph.html)) are still limited to the traditional InterViews plotting environment. This toolbox provides some functions to do data analysis and visualization in matplotlib. One of the advantages of this approach is that plots and animations can be easily shared with other researchers in [iPython notebooks](http://ipython.org/notebook.html).
