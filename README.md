@@ -1,11 +1,9 @@
-[![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.12576.png)](http://dx.doi.org/10.5281/zenodo.12576)
-
-[**CLICK HERE FOR A DEMO**](http://alexhwilliams.info/code/pyneuron_morph.html)
+[![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.12576.png)](http://dx.doi.org/10.5281/zenodo.12576) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ahwillia/PyNeuron-Toolbox?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 PyNeuron-Toolbox
 ================
 
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ahwillia/PyNeuron-Toolbox?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+### To see a demo in a Jupyter Notebook: [CLICK HERE](http://alexhwilliams.info/code/pyneuron_morph.html)
 
 The [NEURON simulation environment](http://www.neuron.yale.edu/neuron/) is one of the most popular options for simulating multi-compartment neuron models. [Hines et al. (2009)](http://journal.frontiersin.org/Journal/10.3389/neuro.11.001.2009/abstract) developed a module that allowed users to execute simulations from python. This option appears to be very popular with users.
 
