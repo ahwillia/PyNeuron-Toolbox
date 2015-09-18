@@ -1,5 +1,7 @@
 [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.12576.png)](http://dx.doi.org/10.5281/zenodo.12576)
 
+[**CLICK HERE FOR A DEMO**](http://alexhwilliams.info/code/pyneuron_morph.html)
+
 PyNeuron-Toolbox
 ================
 
