@@ -51,6 +51,9 @@ WORKDIR $HOME
 RUN git clone https://github.com/jakevdp/JSAnimation.git
 RUN python JSAnimation/setup.py install
 
+
+ENV PYTHONPATH $PYTHONPATH:$HOME/JSAnimation/:$HOME/PyNeuron-Toolbox/
+
 # Switch back to non-root user privledges
 WORKDIR $HOME
 USER main
