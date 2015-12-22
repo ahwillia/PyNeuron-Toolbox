@@ -1,4 +1,4 @@
-[![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.12576.png)](http://dx.doi.org/10.5281/zenodo.12576) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ahwillia/PyNeuron-Toolbox?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.12576.png)](http://dx.doi.org/10.5281/zenodo.12576) [![Binder](http://mybinder.org/badge.svg)](http://mybinder.org/repo/ahwillia/PyNeuron-Toolbox)
 
 PyNeuron-Toolbox
 ================
