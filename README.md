@@ -3,7 +3,7 @@
 PyNeuron-Toolbox
 ================
 
-### To see a demo in a Jupyter Notebook: [CLICK HERE](http://alexhwilliams.info/code/pyneuron_morph.html)
+### To see a live demo in a Jupyter Notebook: [CLICK HERE](http://mybinder.org/repo/ahwillia/PyNeuron-Toolbox)
 
 The [NEURON simulation environment](http://www.neuron.yale.edu/neuron/) is one of the most popular options for simulating multi-compartment neuron models. [Hines et al. (2009)](http://journal.frontiersin.org/Journal/10.3389/neuro.11.001.2009/abstract) developed a module that allowed users to execute simulations from python. This option appears to be very popular with users.
 
@@ -18,10 +18,6 @@ Download or clone this repository, then run:
 `python setup.py install`
 
 I am updating this repository on a semi-regular basis, so check back for updates and [contact me](http://alexhwilliams.info) if you have questions.
-
-Tutorials
-==========
-At the moment, only a few basic functions are included in the toolbox. These mostly relate to visualizing the morphology of model cells. [Click here for a tutorial on the morphology toolbox](http://alexhwilliams.info/code/pyneuron_morph.html) - the animations seem to work best when viewed in Chrome. 
 
 Future Plans
 ============
