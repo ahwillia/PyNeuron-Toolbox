@@ -1,5 +1,5 @@
 import numpy as np
-from morphology import get_all_sections
+from morphology import allsec_preorder
 
 def ez_record(h,var='v',sections=None,order=None,\
               targ_names=None,cust_labels=None):
@@ -24,7 +24,7 @@ def ez_record(h,var='v',sections=None,order=None,\
     """
     if sections is None:
         if order == 'pre':
-            sections = get_all_sections(h)
+            sections = allsec_preorder(h)
         else:
             sections = list(h.allsec())
     if targ_names is not None:

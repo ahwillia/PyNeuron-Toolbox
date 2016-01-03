@@ -139,7 +139,8 @@ def shapeplot(h,ax,sections=None,order=None,cvals=None,\
                   'pre'= pre-order traversal of morphology }
         cvals = list/array with values mapped to color by cmap; useful
                 for displaying voltage, calcium or some other state
-                variable across the shapeplot.
+                variable across the shapeplot. Setting cvals to the
+                string 'rand' will randomly color the compartments
         cmap = colormap used with cvals
         **kwargs passes on to matplotlib (e.g. color='r' for red lines)
 
@@ -150,12 +151,12 @@ def shapeplot(h,ax,sections=None,order=None,cvals=None,\
     # Default is to plot all sections. 
     if sections is None:
         if order == 'pre':
-            sections = get_all_sections(h) # Get sections in "pre-order"
+            sections = allsec_preorder(h) # Get sections in "pre-order"
         else:
             sections = list(h.allsec())
     
     # Determine color limits
-    if cvals is not None and clim is None:
+    if cvals is not None and cvals != 'rand' and clim is None:
         clim = [np.min(cvals), np.max(cvals)]
 
     # Plot each segement as a line
@@ -164,12 +165,20 @@ def shapeplot(h,ax,sections=None,order=None,cvals=None,\
     for sec in sections:
         xyz = get_section_path(h,sec)
         seg_paths = interpolate_jagged(xyz,sec.nseg)
-        for path in seg_paths:
+        if cvals =='rand':
+            col = np.random.uniform(0,1,3)
+            col[np.argmin(col)] = 0.0
+            col[np.argmax(col)] = 1.0
+
+        for (j,path) in enumerate(seg_paths):
             line, = plt.plot(path[:,0], path[:,1], path[:,2], \
                              '-k',**kwargs)
             if cvals is not None:
-                col = cmap(int((cvals[i]-clim[0])*255/(clim[1]-clim[0])))
-                line.set_color(col)
+                if cvals != 'rand':
+                    col = cmap(int((cvals[i]-clim[0])*255/(clim[1]-clim[0])))
+                    line.set_color(col)
+                else:
+                    line.set_color(col * (j/len(seg_paths)))
             lines.append(line)
             i += 1
 
@@ -215,7 +224,7 @@ def mark_locations(h,section,locs,markspec='or',**kwargs):
     rcum = np.append(0,np.cumsum(r))
 
     # convert locs into lengths from the beginning of the path
-    if type(locs) is float:
+    if type(locs) is float or type(locs) is np.float64:
         locs = np.array([locs])
     if type(locs) is list:
         locs = np.array(locs)
@@ -232,7 +241,7 @@ def mark_locations(h,section,locs,markspec='or',**kwargs):
                      xyz_marks[:,2], markspec, **kwargs)
     return line
 
-def get_all_sections(h):
+def allsec_preorder(h):
     """
     Alternative to using h.allsec(). This returns all sections in order from
     the root. Traverses the topology each neuron in "pre-order"
@@ -244,23 +253,30 @@ def get_all_sections(h):
         # has_parent returns a float... cast to bool
         if sref.has_parent() < 0.9:
             roots.append(section)
-    
-    # Build list of all sections
-    sections = []
-    for r in roots:
-        add_pre(h,sections,r)
-    return sections
 
-def add_pre(h,sec_list,section):
+    # Build list of all sections
+    sec_list = []
+    for r in roots:
+        add_pre(h,sec_list,r)
+    return sec_list
+
+def add_pre(h,sec_list,section,order_list=None,branch_order=None):
     """
     A helper function that traverses a neuron's morphology (or a sub-tree)
     of the morphology in pre-order. This is usually not necessary for the
     user to import.
     """
+
     sec_list.append(section)
     sref = h.SectionRef(sec=section)
+
+    if branch_order is not None:
+        order_list.append(branch_order)
+        if len(sref.child) > 1:
+            branch_order += 1
+    
     for next_node in sref.child:
-        add_pre(h,sec_list,next_node)
+        add_pre(h,sec_list,next_node,order_list,branch_order)
 
 def dist_between(h,seg1,seg2):
     """
@@ -270,3 +286,22 @@ def dist_between(h,seg1,seg2):
     """
     h.distance(0, seg1.x, sec=seg1.sec)
     return h.distance(seg2.x, sec=seg2.sec)
+
+def branch_orders(h):
+    """
+    Produces a list branch orders for each section (following pre-order tree
+    traversal)
+    """
+    #Iterate over all sections, find roots
+    roots = []
+    for section in h.allsec():
+        sref = h.SectionRef(sec=section)
+        # has_parent returns a float... cast to bool
+        if sref.has_parent() < 0.9:
+            roots.append(section)
+
+    # Build list of all sections
+    order_list = []
+    for r in roots:
+        add_pre(h,[],r,order_list,0)
+    return order_list
