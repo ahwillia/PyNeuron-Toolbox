@@ -35,6 +35,7 @@ standardized versions.
 import urllib2
 import re
 import json
+import base64
 
 _cache = {}
 
@@ -108,29 +109,37 @@ def metadata(neuron_name):
 
     return dict(zip(keys, values))
 
-def morphology(neuron_name, format='standardized'):
+def morphology(neuron_name, format='swc'):
     """Return the morphology associated with a given name.
 
     Format options:
 
-        standardized -- always SWC (default)
+        swc -- always "stanadardized" file format (default)
         original -- original
 
     Example:
 
-        morphology('mb100318-a', format='standardized')
+        morphology('mb100318-a', format='swc')
         morphology('mb100318-a', format='original')
     """
     url_paths_from_format = {'standardized': 'CNG%20Version', 'original': 'Source-Version'}
     assert(format in url_paths_from_format)
     # locate the path to the downloads
     html = urllib2.urlopen('http://neuromorpho.org/neuron_info.jsp?neuron_name=%s' % neuron_name).read()
-    if format == 'standardized':
+    if format == 'swc':
         url = re.findall("<a href=dableFiles/(.*?)>Morphology File \(Standardized", html)[0]
     else:
         url = re.findall("<a href=dableFiles/(.*?)>Morphology File \(Original", html)[0]
     return urllib2.urlopen('http://NeuroMorpho.org/dableFiles/%s' % url).read()
 
+def download(neuron_name, filename=None):
+    format = 'swc'
+    if filename is not None and len(filename.split('.'))==0:
+        filename = base64.urlsafe_b64encode(filename+'.'+format)
+    if filename is None:
+        filename = base64.urlsafe_b64encode(neuron_name+'.'+format)
+    with open(filename, 'w') as f:
+        f.write(morphology(neuron_name, format=format))
 
 if __name__ == '__main__':
     print 'Demo of reading data from NeuroMorpho.Org'
