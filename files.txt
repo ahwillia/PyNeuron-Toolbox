@@ -1,7 +1,0 @@
-/usr/local/lib/python2.7/dist-packages/PyNeuronToolbox/record.py
-/usr/local/lib/python2.7/dist-packages/PyNeuronToolbox/__init__.py
-/usr/local/lib/python2.7/dist-packages/PyNeuronToolbox/morphology.py
-/usr/local/lib/python2.7/dist-packages/PyNeuronToolbox/record.pyc
-/usr/local/lib/python2.7/dist-packages/PyNeuronToolbox/__init__.pyc
-/usr/local/lib/python2.7/dist-packages/PyNeuronToolbox/morphology.pyc
-/usr/local/lib/python2.7/dist-packages/PyNeuronToolbox-0.1.egg-info
