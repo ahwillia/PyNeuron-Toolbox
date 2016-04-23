@@ -3,6 +3,11 @@ import numpy as np
 import pylab as plt
 from matplotlib.pyplot import cm
 import string
+from neuron import h
+
+# a helper library, included with NEURON
+h.load_file('stdlib.hoc')
+h.load_file('import3d.hoc')
 
 class Cell:
     def __init__(self,name='neuron',soma=[],apic=[],dend=[],axon=[]):
@@ -12,10 +17,17 @@ class Cell:
         self.axon = axon
         self.all = soma + apic + dend + axon
 
+    def delete(self):
+        self.soma = None
+        self.apic = None
+        self.dend = None
+        self.axon = None
+        self.all = None
+
     def __str__(self):
         return self.name
 
-def load_swc(filename, cell=None, use_axon=True, xshift=0, yshift=0, zshift=0):
+def load(filename, fileformat=None, cell=None, use_axon=True, xshift=0, yshift=0, zshift=0):
     """
     Load an SWC from filename and instantiate inside cell. Code kindly provided
     by @ramcdougal.
@@ -42,15 +54,20 @@ def load_swc(filename, cell=None, use_axon=True, xshift=0, yshift=0, zshift=0):
     if cell is None:
         cell = Cell(name=string.join(filename.split('.')[:-1]))
 
-    name_form = {1: 'soma[%d]', 2: 'axon[%d]', 3: 'dend[%d]', 4: 'apic[%d]'}
+    if fileformat is None:
+        fileformat = filename.split('.')[-1]
 
-    # a helper library, included with NEURON
-    h.load_file('import3d.hoc')
+    name_form = {1: 'soma[%d]', 2: 'axon[%d]', 3: 'dend[%d]', 4: 'apic[%d]'}
 
     # load the data. Use Import3d_SWC_read for swc, Import3d_Neurolucida3 for
     # Neurolucida V3, Import3d_MorphML for MorphML (level 1 of NeuroML), or
     # Import3d_Eutectic_read for Eutectic.
-    morph = h.Import3d_SWC_read()
+    if fileformat == 'swc':
+        morph = h.Import3d_SWC_read()
+    elif fileformat == 'asc':
+        morph = h.Import3d_Neurolucida3()
+    else:
+        raise Exception('file format `%s` not recognized'%(fileformat))
     morph.input(filename)
 
     # easiest to instantiate by passing the loaded morphology to the Import3d_GUI
@@ -63,7 +80,6 @@ def load_swc(filename, cell=None, use_axon=True, xshift=0, yshift=0, zshift=0):
     swc_secs = [swc_secs.object(i) for i in xrange(int(swc_secs.count()))]
 
     # initialize the lists of sections
-    cell.soma, cell.apic, cell.dend, cell.axon = [], [], [], []
     sec_list = {1: cell.soma, 2: cell.axon, 3: cell.dend, 4: cell.apic}
 
     # name and create the sections
@@ -82,7 +98,7 @@ def load_swc(filename, cell=None, use_axon=True, xshift=0, yshift=0, zshift=0):
         name = name_form[cell_part] % len(sec_list[cell_part])
 
         # create the section
-        sec = h.Section(cell=cell, name=name)
+        sec = h.Section(name=name)
         
         # connect to parent, if any
         if swc_sec.parentsec is not None:
@@ -115,6 +131,7 @@ def load_swc(filename, cell=None, use_axon=True, xshift=0, yshift=0, zshift=0):
         real_secs[swc_sec.hname()] = sec
 
     cell.all = cell.soma + cell.apic + cell.dend + cell.axon
+    return cell
 
 def sequential_spherical(xyz):
     """
@@ -252,9 +269,7 @@ def shapeplot(h,ax,sections=None,order=None,cvals=None,\
                   'pre'= pre-order traversal of morphology }
         cvals = list/array with values mapped to color by cmap; useful
                 for displaying voltage, calcium or some other state
-                variable across the shapeplot. Setting cvals to the
-                string 'rand' will randomly color the compartments
-        cmap = colormap used with cvals
+                variable across the shapeplot.
         **kwargs passes on to matplotlib (e.g. color='r' for red lines)
 
     Returns:
@@ -269,7 +284,7 @@ def shapeplot(h,ax,sections=None,order=None,cvals=None,\
             sections = list(h.allsec())
     
     # Determine color limits
-    if cvals is not None and cvals != 'rand' and clim is None:
+    if cvals is not None and clim is None:
         clim = [np.min(cvals), np.max(cvals)]
 
     # Plot each segement as a line
@@ -278,29 +293,22 @@ def shapeplot(h,ax,sections=None,order=None,cvals=None,\
     for sec in sections:
         xyz = get_section_path(h,sec)
         seg_paths = interpolate_jagged(xyz,sec.nseg)
-        if cvals =='rand':
-            col = np.random.uniform(0,1,3)
-            col[np.argmin(col)] = 0.0
-            col[np.argmax(col)] = 1.0
 
         for (j,path) in enumerate(seg_paths):
-            line, = plt.plot(path[:,0], path[:,1], path[:,2], \
-                             '-k',**kwargs)
+            line, = plt.plot(path[:,0], path[:,1], path[:,2], '-k',**kwargs)
             if cvals is not None:
-                if cvals != 'rand':
-                    col = cmap(int((cvals[i]-clim[0])*255/(clim[1]-clim[0])))
-                    line.set_color(col)
-                else:
-                    line.set_color(col * (j/len(seg_paths)))
+                col = cmap(int((cvals[i]-clim[0])*255/(clim[1]-clim[0])))
+                line.set_color(col)
             lines.append(line)
             i += 1
 
     return lines
 
-def shapeplot_animate(v,lines,nframes,tscale='linear',\
+def shapeplot_animate(v,lines,nframes=None,tscale='linear',\
                       clim=[-80,50],cmap=cm.YlOrBr_r):
     """ Returns animate function which updates color of shapeplot """
-    
+    if nframes is None:
+        nframes = v.shape[0]
     if tscale == 'linear':
         def animate(i):
             i_t = int((i/nframes)*v.shape[0])
@@ -354,18 +362,37 @@ def mark_locations(h,section,locs,markspec='or',**kwargs):
                      xyz_marks[:,2], markspec, **kwargs)
     return line
 
-def allsec_preorder(h):
+def all_root_sections(h):
     """
-    Alternative to using h.allsec(). This returns all sections in order from
-    the root. Traverses the topology each neuron in "pre-order"
+    Returns a list of all sections that have no parent.
     """
-    #Iterate over all sections, find roots
     roots = []
     for section in h.allsec():
         sref = h.SectionRef(sec=section)
         # has_parent returns a float... cast to bool
         if sref.has_parent() < 0.9:
             roots.append(section)
+    return roots
+
+def root_indices(sec_list):
+    """
+    Returns the index of all sections without a parent.
+    """
+    roots = []
+    for i,section in enumerate(sec_list):
+        sref = h.SectionRef(sec=section)
+        # has_parent returns a float... cast to bool
+        if sref.has_parent() < 0.9:
+            roots.append(i)
+    return roots
+
+def allsec_preorder(h):
+    """
+    Alternative to using h.allsec(). This returns all sections in order from
+    the root. Traverses the topology each neuron in "pre-order"
+    """
+    #Iterate over all sections, find roots
+    roots = all_root_sections(h)
 
     # Build list of all sections
     sec_list = []

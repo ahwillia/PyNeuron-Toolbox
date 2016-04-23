@@ -122,7 +122,7 @@ def morphology(neuron_name, format='swc'):
         morphology('mb100318-a', format='swc')
         morphology('mb100318-a', format='original')
     """
-    url_paths_from_format = {'standardized': 'CNG%20Version', 'original': 'Source-Version'}
+    url_paths_from_format = {'swc': 'CNG%20Version', 'original': 'Source-Version'}
     assert(format in url_paths_from_format)
     # locate the path to the downloads
     html = urllib2.urlopen('http://neuromorpho.org/neuron_info.jsp?neuron_name=%s' % neuron_name).read()
