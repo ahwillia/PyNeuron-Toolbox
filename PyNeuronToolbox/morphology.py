@@ -256,7 +256,7 @@ def get_section_path(h,sec):
     xyz = np.array(xyz)
     return xyz
 
-def shapeplot(h,ax,sections=None,order=None,cvals=None,\
+def shapeplot(h,ax,sections=None,order='pre',cvals=None,\
               clim=None,cmap=cm.YlOrBr_r,**kwargs):
     """
     Plots a 3D shapeplot
@@ -362,7 +362,7 @@ def mark_locations(h,section,locs,markspec='or',**kwargs):
                      xyz_marks[:,2], markspec, **kwargs)
     return line
 
-def all_root_sections(h):
+def root_sections(h):
     """
     Returns a list of all sections that have no parent.
     """
@@ -373,6 +373,18 @@ def all_root_sections(h):
         if sref.has_parent() < 0.9:
             roots.append(section)
     return roots
+
+def leaf_sections(h):
+    """
+    Returns a list of all sections that have no children.
+    """
+    leaves = []
+    for section in h.allsec():
+        sref = h.SectionRef(sec=section)
+        # nchild returns a float... cast to bool
+        if sref.nchild() < 0.9:
+            leaves.append(section)
+    return leaves
 
 def root_indices(sec_list):
     """
@@ -392,7 +404,7 @@ def allsec_preorder(h):
     the root. Traverses the topology each neuron in "pre-order"
     """
     #Iterate over all sections, find roots
-    roots = all_root_sections(h)
+    roots = root_sections(h)
 
     # Build list of all sections
     sec_list = []
@@ -427,7 +439,7 @@ def dist_between(h,seg1,seg2):
     h.distance(0, seg1.x, sec=seg1.sec)
     return h.distance(seg2.x, sec=seg2.sec)
 
-def branch_orders(h):
+def all_branch_orders(h):
     """
     Produces a list branch orders for each section (following pre-order tree
     traversal)
@@ -445,3 +457,124 @@ def branch_orders(h):
     for r in roots:
         add_pre(h,[],r,order_list,0)
     return order_list
+
+def branch_order(h,section, path=[]):
+    """
+    Returns the branch order of a section
+    """
+    path.append(section)
+    sref = h.SectionRef(sec=section)
+    # has_parent returns a float... cast to bool
+    if sref.has_parent() < 0.9:
+        return 0 # section is a root
+    else:
+        nchild = len(list(h.SectionRef(sec=sref.parent).child))
+        if nchild <= 1.1:
+            return branch_order(h,sref.parent,path)
+        else:
+            return 1+branch_order(h,sref.parent,path)
+
+def dist_to_mark(h, section, secdict, path=[]):
+    path.append(section)
+    sref = h.SectionRef(sec=section)
+    # print 'current : '+str(section)
+    # print 'parent  : '+str(sref.parent)
+    if secdict[sref.parent] is None:
+        # print '-> go to parent'
+        s = section.L + dist_to_mark(h, sref.parent, secdict, path)
+        # print 'summing, '+str(s)
+        return s
+    else:
+        # print 'end <- start summing: '+str(section.L)
+        return section.L # parent is marked
+
+def branch_precedence(h):
+    roots = root_sections(h)
+    leaves = leaf_sections(h)
+    seclist = allsec_preorder(h)
+    secdict = { sec:None for sec in seclist }
+
+    for r in roots:
+        secdict[r] = 0
+    
+    precedence = 1
+    while len(leaves)>0:
+        # build list of distances of all paths to remaining leaves
+        d = []
+        for leaf in leaves:
+            p = []
+            dist = dist_to_mark(h, leaf, secdict, path=p)
+            d.append((dist,[pp for pp in p]))
+        
+        # longest path index
+        i = np.argmax([ dd[0] for dd in d ])
+        leaves.pop(i) # this leaf will be marked
+
+        # mark all sections in longest path
+        for sec in d[i][1]:
+            if secdict[sec] is None:
+                secdict[sec] = precedence
+
+        # increment precedence across iterations
+        precedence += 1
+
+    #prec = secdict.values()
+    #return [0 if p is None else 1 for p in prec], d[i][1]
+    return [ secdict[sec] for sec in seclist ]
+
+
+from neuron import h
+from neuron.rxd.morphology import parent, parent_loc
+import json
+
+def morphology_to_dict(sections, outfile=None):
+    section_map = {sec: i for i, sec in enumerate(sections)}
+    result = []
+    h.define_shape()
+
+    for sec in sections:
+        my_parent = parent(sec)
+        my_parent_loc = -1 if my_parent is None else parent_loc(sec, my_parent)
+        my_parent = -1 if my_parent is None else section_map[my_parent]
+        n3d = int(h.n3d(sec=sec))
+        result.append({
+            'section_orientation': h.section_orientation(sec=sec),
+            'parent': my_parent,
+            'parent_loc': my_parent_loc,
+            'x': [h.x3d(i, sec=sec) for i in xrange(n3d)],
+            'y': [h.y3d(i, sec=sec) for i in xrange(n3d)],
+            'z': [h.z3d(i, sec=sec) for i in xrange(n3d)],
+            'diam': [h.diam3d(i, sec=sec) for i in xrange(n3d)],
+            'name': sec.hname()           
+        })
+
+    if outfile is not None:
+        with open(outfile, 'w') as f:
+            json.dump(result, f)
+
+    return result
+
+
+def load_json(morphfile):
+
+    with open(morphfile, 'r') as f:
+        secdata = json.load(morphfile)
+
+    seclist = []
+    for sd in secdata:
+        # make section
+        sec = h.Section(name=sd['name'])
+        seclist.append(sec)
+
+
+        # make 3d morphology
+        for x,y,z,d in zip(sd['x'], sd['y'], sd['z'], sd('diam')): 
+            h.pt3dadd(x, y, z, d, sec=sec)
+
+    # connect children to parent compartments
+    for sec,sd in zip(seclist,secdata):
+        if sd['parent_loc'] >= 0:
+            parent_sec = sec_list[sd['parent']]
+            sec.connect(parent_sec(sd['parent_loc']), sd['section_orientation'])
+
+    return seclist
