@@ -3,6 +3,12 @@ import numpy as np
 import pylab as plt
 from matplotlib.pyplot import cm
 import string
+from neuron import h
+import numbers
+
+# a helper library, included with NEURON
+h.load_file('stdlib.hoc')
+h.load_file('import3d.hoc')
 
 class Cell:
     def __init__(self,name='neuron',soma=[],apic=[],dend=[],axon=[]):
@@ -12,10 +18,17 @@ class Cell:
         self.axon = axon
         self.all = soma + apic + dend + axon
 
+    def delete(self):
+        self.soma = None
+        self.apic = None
+        self.dend = None
+        self.axon = None
+        self.all = None
+
     def __str__(self):
         return self.name
 
-def load_swc(filename, cell=None, use_axon=True, xshift=0, yshift=0, zshift=0):
+def load(filename, fileformat=None, cell=None, use_axon=True, xshift=0, yshift=0, zshift=0):
     """
     Load an SWC from filename and instantiate inside cell. Code kindly provided
     by @ramcdougal.
@@ -42,15 +55,20 @@ def load_swc(filename, cell=None, use_axon=True, xshift=0, yshift=0, zshift=0):
     if cell is None:
         cell = Cell(name=string.join(filename.split('.')[:-1]))
 
-    name_form = {1: 'soma[%d]', 2: 'axon[%d]', 3: 'dend[%d]', 4: 'apic[%d]'}
+    if fileformat is None:
+        fileformat = filename.split('.')[-1]
 
-    # a helper library, included with NEURON
-    h.load_file('import3d.hoc')
+    name_form = {1: 'soma[%d]', 2: 'axon[%d]', 3: 'dend[%d]', 4: 'apic[%d]'}
 
     # load the data. Use Import3d_SWC_read for swc, Import3d_Neurolucida3 for
     # Neurolucida V3, Import3d_MorphML for MorphML (level 1 of NeuroML), or
     # Import3d_Eutectic_read for Eutectic.
-    morph = h.Import3d_SWC_read()
+    if fileformat == 'swc':
+        morph = h.Import3d_SWC_read()
+    elif fileformat == 'asc':
+        morph = h.Import3d_Neurolucida3()
+    else:
+        raise Exception('file format `%s` not recognized'%(fileformat))
     morph.input(filename)
 
     # easiest to instantiate by passing the loaded morphology to the Import3d_GUI
@@ -63,7 +81,6 @@ def load_swc(filename, cell=None, use_axon=True, xshift=0, yshift=0, zshift=0):
     swc_secs = [swc_secs.object(i) for i in xrange(int(swc_secs.count()))]
 
     # initialize the lists of sections
-    cell.soma, cell.apic, cell.dend, cell.axon = [], [], [], []
     sec_list = {1: cell.soma, 2: cell.axon, 3: cell.dend, 4: cell.apic}
 
     # name and create the sections
@@ -82,7 +99,7 @@ def load_swc(filename, cell=None, use_axon=True, xshift=0, yshift=0, zshift=0):
         name = name_form[cell_part] % len(sec_list[cell_part])
 
         # create the section
-        sec = h.Section(cell=cell, name=name)
+        sec = h.Section(name=name)
         
         # connect to parent, if any
         if swc_sec.parentsec is not None:
@@ -115,6 +132,7 @@ def load_swc(filename, cell=None, use_axon=True, xshift=0, yshift=0, zshift=0):
         real_secs[swc_sec.hname()] = sec
 
     cell.all = cell.soma + cell.apic + cell.dend + cell.axon
+    return cell
 
 def sequential_spherical(xyz):
     """
@@ -239,7 +257,7 @@ def get_section_path(h,sec):
     xyz = np.array(xyz)
     return xyz
 
-def shapeplot(h,ax,sections=None,order=None,cvals=None,\
+def shapeplot(h,ax,sections=None,order='pre',cvals=None,\
               clim=None,cmap=cm.YlOrBr_r,**kwargs):
     """
     Plots a 3D shapeplot
@@ -252,9 +270,7 @@ def shapeplot(h,ax,sections=None,order=None,cvals=None,\
                   'pre'= pre-order traversal of morphology }
         cvals = list/array with values mapped to color by cmap; useful
                 for displaying voltage, calcium or some other state
-                variable across the shapeplot. Setting cvals to the
-                string 'rand' will randomly color the compartments
-        cmap = colormap used with cvals
+                variable across the shapeplot.
         **kwargs passes on to matplotlib (e.g. color='r' for red lines)
 
     Returns:
@@ -269,8 +285,10 @@ def shapeplot(h,ax,sections=None,order=None,cvals=None,\
             sections = list(h.allsec())
     
     # Determine color limits
-    if cvals is not None and cvals != 'rand' and clim is None:
-        clim = [np.min(cvals), np.max(cvals)]
+    if cvals is not None and clim is None:
+        cn = [ isinstance(cv, numbers.Number) for cv in cvals ]
+        if any(cn): 
+            clim = [np.min(cvals[cn]), np.max(cvals[cn])]
 
     # Plot each segement as a line
     lines = []
@@ -278,29 +296,27 @@ def shapeplot(h,ax,sections=None,order=None,cvals=None,\
     for sec in sections:
         xyz = get_section_path(h,sec)
         seg_paths = interpolate_jagged(xyz,sec.nseg)
-        if cvals =='rand':
-            col = np.random.uniform(0,1,3)
-            col[np.argmin(col)] = 0.0
-            col[np.argmax(col)] = 1.0
 
         for (j,path) in enumerate(seg_paths):
-            line, = plt.plot(path[:,0], path[:,1], path[:,2], \
-                             '-k',**kwargs)
+            line, = plt.plot(path[:,0], path[:,1], path[:,2], '-k',**kwargs)
             if cvals is not None:
-                if cvals != 'rand':
+                if isinstance(cvals[i], numbers.Number):
+                    # map number to colormap
                     col = cmap(int((cvals[i]-clim[0])*255/(clim[1]-clim[0])))
-                    line.set_color(col)
                 else:
-                    line.set_color(col * (j/len(seg_paths)))
+                    # use input directly. E.g. if user specified color with a string.
+                    col = cvals[i]
+                line.set_color(col)
             lines.append(line)
             i += 1
 
     return lines
 
-def shapeplot_animate(v,lines,nframes,tscale='linear',\
+def shapeplot_animate(v,lines,nframes=None,tscale='linear',\
                       clim=[-80,50],cmap=cm.YlOrBr_r):
     """ Returns animate function which updates color of shapeplot """
-    
+    if nframes is None:
+        nframes = v.shape[0]
     if tscale == 'linear':
         def animate(i):
             i_t = int((i/nframes)*v.shape[0])
@@ -354,18 +370,49 @@ def mark_locations(h,section,locs,markspec='or',**kwargs):
                      xyz_marks[:,2], markspec, **kwargs)
     return line
 
-def allsec_preorder(h):
+def root_sections(h):
     """
-    Alternative to using h.allsec(). This returns all sections in order from
-    the root. Traverses the topology each neuron in "pre-order"
+    Returns a list of all sections that have no parent.
     """
-    #Iterate over all sections, find roots
     roots = []
     for section in h.allsec():
         sref = h.SectionRef(sec=section)
         # has_parent returns a float... cast to bool
         if sref.has_parent() < 0.9:
             roots.append(section)
+    return roots
+
+def leaf_sections(h):
+    """
+    Returns a list of all sections that have no children.
+    """
+    leaves = []
+    for section in h.allsec():
+        sref = h.SectionRef(sec=section)
+        # nchild returns a float... cast to bool
+        if sref.nchild() < 0.9:
+            leaves.append(section)
+    return leaves
+
+def root_indices(sec_list):
+    """
+    Returns the index of all sections without a parent.
+    """
+    roots = []
+    for i,section in enumerate(sec_list):
+        sref = h.SectionRef(sec=section)
+        # has_parent returns a float... cast to bool
+        if sref.has_parent() < 0.9:
+            roots.append(i)
+    return roots
+
+def allsec_preorder(h):
+    """
+    Alternative to using h.allsec(). This returns all sections in order from
+    the root. Traverses the topology each neuron in "pre-order"
+    """
+    #Iterate over all sections, find roots
+    roots = root_sections(h)
 
     # Build list of all sections
     sec_list = []
@@ -400,7 +447,7 @@ def dist_between(h,seg1,seg2):
     h.distance(0, seg1.x, sec=seg1.sec)
     return h.distance(seg2.x, sec=seg2.sec)
 
-def branch_orders(h):
+def all_branch_orders(h):
     """
     Produces a list branch orders for each section (following pre-order tree
     traversal)
@@ -418,3 +465,124 @@ def branch_orders(h):
     for r in roots:
         add_pre(h,[],r,order_list,0)
     return order_list
+
+def branch_order(h,section, path=[]):
+    """
+    Returns the branch order of a section
+    """
+    path.append(section)
+    sref = h.SectionRef(sec=section)
+    # has_parent returns a float... cast to bool
+    if sref.has_parent() < 0.9:
+        return 0 # section is a root
+    else:
+        nchild = len(list(h.SectionRef(sec=sref.parent).child))
+        if nchild <= 1.1:
+            return branch_order(h,sref.parent,path)
+        else:
+            return 1+branch_order(h,sref.parent,path)
+
+def dist_to_mark(h, section, secdict, path=[]):
+    path.append(section)
+    sref = h.SectionRef(sec=section)
+    # print 'current : '+str(section)
+    # print 'parent  : '+str(sref.parent)
+    if secdict[sref.parent] is None:
+        # print '-> go to parent'
+        s = section.L + dist_to_mark(h, sref.parent, secdict, path)
+        # print 'summing, '+str(s)
+        return s
+    else:
+        # print 'end <- start summing: '+str(section.L)
+        return section.L # parent is marked
+
+def branch_precedence(h):
+    roots = root_sections(h)
+    leaves = leaf_sections(h)
+    seclist = allsec_preorder(h)
+    secdict = { sec:None for sec in seclist }
+
+    for r in roots:
+        secdict[r] = 0
+    
+    precedence = 1
+    while len(leaves)>0:
+        # build list of distances of all paths to remaining leaves
+        d = []
+        for leaf in leaves:
+            p = []
+            dist = dist_to_mark(h, leaf, secdict, path=p)
+            d.append((dist,[pp for pp in p]))
+        
+        # longest path index
+        i = np.argmax([ dd[0] for dd in d ])
+        leaves.pop(i) # this leaf will be marked
+
+        # mark all sections in longest path
+        for sec in d[i][1]:
+            if secdict[sec] is None:
+                secdict[sec] = precedence
+
+        # increment precedence across iterations
+        precedence += 1
+
+    #prec = secdict.values()
+    #return [0 if p is None else 1 for p in prec], d[i][1]
+    return [ secdict[sec] for sec in seclist ]
+
+
+from neuron import h
+from neuron.rxd.morphology import parent, parent_loc
+import json
+
+def morphology_to_dict(sections, outfile=None):
+    section_map = {sec: i for i, sec in enumerate(sections)}
+    result = []
+    h.define_shape()
+
+    for sec in sections:
+        my_parent = parent(sec)
+        my_parent_loc = -1 if my_parent is None else parent_loc(sec, my_parent)
+        my_parent = -1 if my_parent is None else section_map[my_parent]
+        n3d = int(h.n3d(sec=sec))
+        result.append({
+            'section_orientation': h.section_orientation(sec=sec),
+            'parent': my_parent,
+            'parent_loc': my_parent_loc,
+            'x': [h.x3d(i, sec=sec) for i in xrange(n3d)],
+            'y': [h.y3d(i, sec=sec) for i in xrange(n3d)],
+            'z': [h.z3d(i, sec=sec) for i in xrange(n3d)],
+            'diam': [h.diam3d(i, sec=sec) for i in xrange(n3d)],
+            'name': sec.hname()           
+        })
+
+    if outfile is not None:
+        with open(outfile, 'w') as f:
+            json.dump(result, f)
+
+    return result
+
+
+def load_json(morphfile):
+
+    with open(morphfile, 'r') as f:
+        secdata = json.load(morphfile)
+
+    seclist = []
+    for sd in secdata:
+        # make section
+        sec = h.Section(name=sd['name'])
+        seclist.append(sec)
+
+
+        # make 3d morphology
+        for x,y,z,d in zip(sd['x'], sd['y'], sd['z'], sd('diam')): 
+            h.pt3dadd(x, y, z, d, sec=sec)
+
+    # connect children to parent compartments
+    for sec,sd in zip(seclist,secdata):
+        if sd['parent_loc'] >= 0:
+            parent_sec = sec_list[sd['parent']]
+            sec.connect(parent_sec(sd['parent_loc']), sd['section_orientation'])
+
+    return seclist
