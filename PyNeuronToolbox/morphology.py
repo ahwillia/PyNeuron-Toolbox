@@ -4,6 +4,7 @@ import pylab as plt
 from matplotlib.pyplot import cm
 import string
 from neuron import h
+import numbers
 
 # a helper library, included with NEURON
 h.load_file('stdlib.hoc')
@@ -285,7 +286,9 @@ def shapeplot(h,ax,sections=None,order='pre',cvals=None,\
     
     # Determine color limits
     if cvals is not None and clim is None:
-        clim = [np.min(cvals), np.max(cvals)]
+        cn = [ isinstance(cv, numbers.Number) for cv in cvals ]
+        if any(cn): 
+            clim = [np.min(cvals[cn]), np.max(cvals[cn])]
 
     # Plot each segement as a line
     lines = []
@@ -297,7 +300,12 @@ def shapeplot(h,ax,sections=None,order='pre',cvals=None,\
         for (j,path) in enumerate(seg_paths):
             line, = plt.plot(path[:,0], path[:,1], path[:,2], '-k',**kwargs)
             if cvals is not None:
-                col = cmap(int((cvals[i]-clim[0])*255/(clim[1]-clim[0])))
+                if isinstance(cvals[i], numbers.Number):
+                    # map number to colormap
+                    col = cmap(int((cvals[i]-clim[0])*255/(clim[1]-clim[0])))
+                else:
+                    # use input directly. E.g. if user specified color with a string.
+                    col = cvals[i]
                 line.set_color(col)
             lines.append(line)
             i += 1
