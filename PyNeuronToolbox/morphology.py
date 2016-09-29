@@ -11,12 +11,12 @@ h.load_file('stdlib.hoc')
 h.load_file('import3d.hoc')
 
 class Cell:
-    def __init__(self,name='neuron',soma=[],apic=[],dend=[],axon=[]):
-        self.soma = soma
-        self.apic = apic
-        self.dend = dend
-        self.axon = axon
-        self.all = soma + apic + dend + axon
+    def __init__(self,name='neuron',soma=None,apic=None,dend=None,axon=None):
+        self.soma = soma if soma is not None else []
+        self.apic = apic if apic is not None else []
+        self.dend = dend if dend is not None else []
+        self.axon = axon if axon is not None else []
+        self.all = self.soma + self.apic + self.dend + self.axon
 
     def delete(self):
         self.soma = None
