@@ -322,11 +322,13 @@ def shapeplot_animate(v,lines,nframes=None,tscale='linear',\
             i_t = int((i/nframes)*v.shape[0])
             for i_seg in range(v.shape[1]):
                 lines[i_seg].set_color(cmap(int((v[i_t,i_seg]-clim[0])*255/(clim[1]-clim[0]))))
+            return []
     elif tscale == 'log':
         def animate(i):
             i_t = int(np.round((v.shape[0] ** (1.0/(nframes-1))) ** i - 1))
             for i_seg in range(v.shape[1]):
                 lines[i_seg].set_color(cmap(int((v[i_t,i_seg]-clim[0])*255/(clim[1]-clim[0]))))
+            return []
     else:
         raise ValueError("Unrecognized option '%s' for tscale" % tscale)
 
