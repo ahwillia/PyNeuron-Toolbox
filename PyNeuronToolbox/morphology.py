@@ -45,10 +45,10 @@ def load(filename, fileformat=None, cell=None, use_axon=True, xshift=0, yshift=0
 
     Minimal example:
         # pull the morphology for the demo from NeuroMorpho.Org
-        from PyNeuronToolbox import neuromorphoorg
+        from PyNeuronToolbox import neuromorphoorg, load
         with open('c91662.swc', 'w') as f:
             f.write(neuromorphoorg.morphology('c91662'))
-        cell = load_swc(filename)
+        cell = load(filename)
 
     """
 
