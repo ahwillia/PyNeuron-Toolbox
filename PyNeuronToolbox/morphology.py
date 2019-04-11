@@ -376,37 +376,21 @@ def root_sections(h):
     """
     Returns a list of all sections that have no parent.
     """
-    roots = []
-    for section in h.allsec():
-        sref = h.SectionRef(sec=section)
-        # has_parent returns a float... cast to bool
-        if sref.has_parent() < 0.9:
-            roots.append(section)
-    return roots
+    roots = h.SectionList()
+    roots.allroots()
+    return list(roots)
 
 def leaf_sections(h):
     """
     Returns a list of all sections that have no children.
     """
-    leaves = []
-    for section in h.allsec():
-        sref = h.SectionRef(sec=section)
-        # nchild returns a float... cast to bool
-        if sref.nchild() < 0.9:
-            leaves.append(section)
-    return leaves
+    return [sec for sec in h.allsec() if not sec.children()]
 
 def root_indices(sec_list):
     """
     Returns the index of all sections without a parent.
     """
-    roots = []
-    for i,section in enumerate(sec_list):
-        sref = h.SectionRef(sec=section)
-        # has_parent returns a float... cast to bool
-        if sref.has_parent() < 0.9:
-            roots.append(i)
-    return roots
+    return [i for i, sec in enumerate(sec_list) if sec.parentseg() is None]
 
 def allsec_preorder(h):
     """
@@ -442,12 +426,14 @@ def add_pre(h,sec_list,section,order_list=None,branch_order=None):
 
 def dist_between(h,seg1,seg2):
     """
-    Calculates the distance between two segments. I stole this function from
+    Calculates the distance between two segments. Adapted from
     a post by Michael Hines on the NEURON forum
     (www.neuron.yale.edu/phpbb/viewtopic.php?f=2&t=2114)
+    
+    Note: In NEURON 7.7+, you can just do return h.distance(seg1, seg2)
     """
-    h.distance(0, seg1.x, sec=seg1.sec)
-    return h.distance(seg2.x, sec=seg2.sec)
+    h.distance(0, seg1)
+    return h.distance(seg2)
 
 def all_branch_orders(h):
     """
