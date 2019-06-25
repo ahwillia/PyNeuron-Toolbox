@@ -99,7 +99,7 @@ def load(filename, fileformat=None, cell=None, use_axon=True, xshift=0, yshift=0
         name = name_form[cell_part] % len(sec_list[cell_part])
 
         # create the section
-        sec = h.Section(name=name)
+        sec = h.Section(name=name, cell=cell)
         
         # connect to parent, if any
         if swc_sec.parentsec is not None:
