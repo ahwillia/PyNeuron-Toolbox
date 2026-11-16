@@ -36,7 +36,7 @@ def ivcurve(mechanism_name, i_type, vmin=-100, vmax=100, deltav=1, transient_tim
     seclamp.dur2 = test_time 
     seclamp.rs = rs
     i_record = h.Vector()
-    i_record.record(sec(0.5).__getattribute__('_ref_' + i_type))
+    i_record.record(getattr(sec(0.5), '_ref_' + i_type))
     result_i = []
     result_v = numpy.arange(vmin, vmax, deltav)
     for test_v in result_v:
